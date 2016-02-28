@@ -279,3 +279,45 @@ ifconfig 查看和配置当前机器的网络参数信息
 ifconfig eth0 up(down)      #激活或者关闭某个网络适配卡
 ifconfig eth0 [ipaddress] netmask [address] #设置IP和子网掩码
 ```
+
+
+12
+软件安装包: rpm主要是redhat deb主要是ubuntu下边的
+安装卸载方式:
+```Bash
+#dpkg 离线安装和卸载
+dpkg -i [package] #安装
+dpkg -p [package] #卸载
+
+#aptitude 程序包在线安装
+apt-get install <package> #安装
+apt-get remove -purge <package> #完全卸载
+```
+
+vi的使用模式: 命令模式 插入模式 末行模式
+命令模式(光标移动 文本选择)
+h,j,k,l,(左,下,上,右)
+G调到尾部 1G顶部 n+向下移动n行 n-向上移动n行
+x删除光标前的字符 dw删除当前词 dd删除当前行
+yw 复制光标所在的一个词 yy复制当前行 p从当前向下粘贴
+
+最后行模式
+```Bash
+:[n1], [n2]co[n3] #n1 和n2复制到n3行之后
+:[n1], [n2]m[n3] #n1 和n2移动到n3行之后
+
+w #保存
+w filename      #存成新文件
+q #退出
+ql #强行退出不保存
+wq #保存并退出
+
+:set nu #显示行号
+:set nonu #隐藏
+```
+
+13
+io: 文件IO, 目录IO, 标准IO
+文件IO: open(), write(), read(),close()
+open(char *, flag, mode);//包含文件名和路径;打开文件的方式;创建文件的权限
+成功返回文件描述符,即文件的ID号(iNode 内核中的表示) 出错返回-1

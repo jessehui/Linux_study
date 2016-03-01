@@ -5,7 +5,7 @@
 #include "unistd.h"
 #include "fcntl.h"
 
-int main(int argc, int *argv[])
+int main(int argc, char *argv[])
 {
 	int fd;
 	fd = open("../L1_touch/test2.c", O_TRUNC | O_RDWR);

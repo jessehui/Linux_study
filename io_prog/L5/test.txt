@@ -1,1 +1,6 @@
-s
+total 32
+-rwxrwxrwx 1 root  root     0 Mar  7 16:03 test.txt
+-rwxrwxr-x 1 jesse jesse 8880 Mar  7 16:01 cat_test
+-rw-rw-r-- 1 jesse jesse  676 Mar  7 16:01 cat_test.c
+-rwxr-xr-x 1 root  root  9056 Mar  7 09:42 feof_ferror
+-rw-r--r-- 1 root  root  1103 Mar  7 09:42 feof_ferror.c

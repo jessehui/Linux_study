@@ -321,3 +321,182 @@ io: 文件IO, 目录IO, 标准IO
 文件IO: open(), write(), read(),close()
 open(char *, flag, mode);//包含文件名和路径;打开文件的方式;创建文件的权限
 成功返回文件描述符,即文件的ID号(iNode 内核中的表示) 出错返回-1
+程序刚刚启动的时候，0是标准输入，1是标准输出，2是标准错误。如果此时去打开一个新的文件，它的文件描述符会是3。POSIX标准要求每次打开文件时（含socket）必须使用当前进程中最小可用的文件描述符号码，因此，在网络通信过程中稍不注意就有可能造成串话。
+
+利用open函数创建的文件权限并不是设置为多少就是多少. 而且与umask(掩码)有关.
+
+main(int argc, char *argv[ ], char **env)才是UNIX和Linux中的标准写法。
+argc: 整数,用来统计你运行程序时送给main函数的命令行参数的个数
+* argv[ ]: 字符串数组，用来存放指向你的字符串参数的指针数组，每一个元素指向一个参数
+**env:字符串数组。env[ ]的每一个元素都包含ENVVAR=value形式的字符串。其中ENVVAR为环境变量，value 为ENVVAR的对应值。
+
+```Bash
+int main(argc, char *argv[], char**env)
+```
+
+设置权限为:
+```Bash
+fd = open(argv[1],//文件名，路径
+          O_CREAT | O_RDWR, // 表示新建一个文件 同时可以以读写方式打开
+            777); // 新建文件的权限 777 所有可读可执行可写
+```
+掩码为(异或运算):
+```Bash
+jesse@ubuntu:~/Git/Linux/io_prog$ umask
+0002
+```
+0777(10) = 000 111 111 111 (2)
+0022(10) = 000 000 010 010 (2)
+
+                  000 111 101 101 (2)
+更改掩码 umask 0000即可
+
+open函数第二个参数 flag  打开文件方式:
+O_RDONLY 只读
+O_WRONLY 只写
+O_RDWR 读写
+O_CREAT 创建一个文件
+O_APPEND 追加方式打开文件 不会把已经存在的文件删除
+O_TRUNC 打开文件 会把已经存在的内容删除
+O_EXCL 使用O_CREAT时文件存在 则返回错误信息. 这一参数可以来测试文件是否存在. 如果不加的话 只有O_CREAT则都会创建成功
+
+14 write(),read()函数
+并不是想读多少 想写多少就能读/写多少
+```Bash
+write(int fd, // 向哪一个文件中写
+         void *buf, //向文件中写什么内容
+         size_t count // 向文件中写多少个
+)
+//返回值: 实际写的字节数
+
+read( int fd, // 从哪一个文件中读
+         void *buf, //读到哪里去
+         size_t count // 向文件中读多少个
+)
+//返回值:实际读的字节数
+```
+
+15 快捷键:
+ctrl+a:光标移到行首。
+ctrl+b:光标左移一个字母
+ctrl+c:杀死当前进程。
+ctrl+d:退出当前 Shell。
+ctrl+e:光标移到行尾。
+ctrl+h:删除光标前一个字符，同 backspace 键相同。
+ctrl+k:清除光标后至行尾的内容。
+ctrl+l:清屏，相当于clear。
+ctrl+r:搜索之前打过的命令。会有一个提示，根据你输入的关键字进行搜索bash的history
+ctrl+u: 清除光标前至行首间的所有内容。
+ctrl+w: 移除光标前的一个单词
+ctrl+t: 交换光标位置前的两个字符
+ctrl+y: 粘贴或者恢复上次的删除
+ctrl+d: 删除光标所在字母;注意和backspace以及ctrl+h的区别，这2个是删除光标前的字符
+ctrl+f: 光标右移
+ctrl+z : 把当前进程转到后台运行，使用’ fg ‘命令恢复。比如top -d1 然后ctrl+z ，到后台，然后fg,重新恢复
+esc组合
+esc+d: 删除光标后的一个词
+esc+f: 往右跳一个词
+esc+b: 往左跳一个词
+esc+t: 交换光标位置前的两个单词。
+
+16 lseek()函数
+调整读写的位置指针
+```C
+lseek( int fd, //文件描述符
+          off_t offset, //偏移量,每一个读写操作需要移动的距离
+          int whence // 当前位置的基点
+           //三个标志: SEEK_SET(当前位置为文件开头,新位置为偏移量的大小)
+          //SEEK_CUR: 当前位置为文件指针的位置, 新位置为当前位置加上偏移量
+          //SEEK_END: 当前位置为文件的结尾, 新位置为文件的大小加上偏移量的大小
+)
+//成功返回:文件当前位置 出错返回:-1
+```
+
+VIM 复制粘贴方法:
+鼠标选择 然后 按y
+鼠标放到需要粘贴的地方 按p
+
+17
+文件IO: 直接调用内核提供的系统调用函数 头文件 “unistd.h"
+标准IO: 间接调用系统调用函数 头文件”stdio.h”
+printf,scanf, putchar, put, getchar,get与普通文件的读写没有关系 他们不能读写普通文件
+
+缓存类型:
+user 用户空间缓存
+kernel 内核空间缓存
+标准IO的库函数 还有一个缓存 叫库缓存 lib buffer
+库缓存特点: printf遇到\n才会将库缓存的内容写到内核中, 即调用系统函数
+库缓存写满时 才会调用系统函数 将lib buffer 写到 kernel buffer中去
+
+标准IO: fopen(), fclose(), fseek(), 读写函数较多, 分三类, 全缓存, 行缓存, 无缓存
+
+```Bash
+FILE *fopen(const char *path, const char *mode);
+//返回值: FILE * 文件流指针, 类似文件IO中的文件描述符(文件IO中指内核空间中的文件在进程里对应的ID号)
+```
+
+参数mode(字符串 加引号): 打开文件方式
+b: 二进制文件
+r:只读方式打开, 文件必须存在
+w/a: 只写方式打开文件, 文件不存在则创建 区别: W类似 O_TRUNC(先删除), A类似O_APPEND(原来基础上添加)
++: 读写方式打开文件, 文件必须存在
+
+fopen函数生成文件的权限跟umask有关
+
+18 读写函数
+三类: 行缓存, 无缓存, 全缓存
+行缓存: 遇到新行符(\n) 或写满缓存时 则调用系统函数
+e.g. fgets, gets, scanf(读)
+fputs, puts, scanf, printf, fprintf, sprintf
+
+无缓存: 只要用户调用这个函数, 就会将其内容写到内核中
+
+全缓存: 只有写满缓存才会调用系统函数 如fread, fwrite
+
+不管用哪种缓存, 只要调用了fclose(), 在该文件被关闭之前, 刷新缓存中的数据. 如果标准IO已经为该流自动分配了一个缓存,则释放此缓存.
+
+fputs, fgets:
+char *fputs(const char *s, FILE *stream);//写命令
+第一个参数 缓存 即写什么内容
+第二个参数 文件流 写到哪里
+返回值: 成功返回非负值 出错返回EOF
+
+char *fgets(char *s, int size, FILE *stream);//读命令
+第一个参数 读到哪个字符串里
+第二个参数 读多少字节
+第三个参数 从哪个文件中读
+返回值: 成功则返回s(缓存的地址) , 如果出错返回NULL
+
+fflush(FILE *fp); 把库函数中的缓存内容强制写到内核中去
+( fclose()函数中包含fflush() )
+
+```C
+fputs("hellow linux\n", stdout);//或者不加\n 而加上fflush函数
+    //或者
+    //fputs("hellow linux",stdout);
+    //fflush(stdout);
+
+     //或者
+     //fputs(“hellow linux”,stderr);//也可以显示
+```
+所以, stdout是行缓存的, 而stderr是无缓存的
+
+19
+fseek()函数和lseek()函数参数类似 第一个为要调整的文件 第二个为偏移量 第三个为基准(SEEK_SET,SEEK_END,SEEK_CUR)
+lseek()返回值为当前文件的位置指针 fseek()返回值成功返回0,失败返回-11
+
+rewind(FILE *fp)等价于 (void) fseek(fp,0,SEEK_SET)
+用于设定流的文件位置 指示为文件开始
+
+ftell( FILE *fp ) 用于取得当前的文件指针 调用成功则返回当前文件位置 失败返回-1
+
+20
+char *gets( char *s )//读
+与fgets 相比 (1)不能指定缓存的长度 可能造成缓存越界 (2)只能从标准输入中读 (3)gets不将换行符存入缓存
+
+int puts(const char *s)//写
+puts只能向标准输出中写 puts输出时会自动添加换行符 fputs不会
+
+fprintf(FILE *stream,”string") 可以输出到显示器 也可以输出到文件 行缓存
+
+int sprintf(str *, “string”) 输出内容到一个字符串中 经常用在数据库语言中 行缓存

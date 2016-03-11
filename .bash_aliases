@@ -1,1 +1,1 @@
-alias fuck='cd Git/Linux/io_prog/;ls'
+alias fuck='cd Git/Linux/network_prog/;ls'

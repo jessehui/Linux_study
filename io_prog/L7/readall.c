@@ -17,18 +17,22 @@ int main(int argc, char *argv[])
 	{
 		printf("open dir failure\n");
 		return -2;
-	}	
+	}
+	printf("open dir success.\n");
+	
 	//start to read
+	while(1)
+	{
 	drt = readdir(dr);
 	if(drt == NULL)
 	{
-		printf("read dir failure\n");
-		return -3;
+		printf("read dir end\n");
+		break;
 	}
 	printf("read dir success\n");
 	printf("inode = %d, dirname = %s\n", drt->d_ino,drt->d_name);
 
-	printf("open dir success.\n");
+	}
 	closedir(dr);
 	return 0;
 	

@@ -500,3 +500,224 @@ puts只能向标准输出中写 puts输出时会自动添加换行符 fputs不�
 fprintf(FILE *stream,”string") 可以输出到显示器 也可以输出到文件 行缓存
 
 int sprintf(str *, “string”) 输出内容到一个字符串中 经常用在数据库语言中 行缓存
+
+
+21
+fgets 可以从文件中读 换行符也会被读入
+fputs 标准输出 文件输出都可以 原样输出 不会自动添加换行符
+
+fgetc(FILE *fp)
+功能 从文件中读取一个字符 参数:文件流 返回值: 正确返回读取的字符 错误返回EOF(-1)
+
+int fputs(int c, FILE *fp)
+参数:第一个表示要写的字符 第二个为文件流
+返回值: 成功则返回输入的字符 错误返回EOF
+fputc是否是行缓存（否） 有缓存 但不是行缓存
+
+22
+int feof(FILE *fp)
+判断是否到文件结尾 到文件结束则返回非0 否返回0
+
+int ferror(FILE *stream)
+判断是否读写错误 是读写错误返回非0 否返回0
+
+void clearerr(FILE *stream)
+清除流错误
+
+23
+先写后读 写到目标文件 然后从目标文件读到标准输出中 需要用lseek fseek rewind 等函数重新调整指针位置
+先读后写 一般从源文件读 然后写到目标文件 两个文件 所以不需要从新调整指针位置
+
+命令都在/bin下边例如 cat 所以可以把自己用gcc编译的例如cat_test拷贝到bin下就可以随时调用
+```Bash
+jesse@ubuntu:~/Git/Linux/io_prog/L5$ sudo cp cat_test /bin
+jesse@ubuntu:~/Git/Linux/io_prog/L5$ cat_test test.txt
+Open source file test.txt success.
+total 32
+-rwxrwxrwx 1 root  root     0 Mar  7 16:03 test.txt
+-rwxrwxr-x 1 jesse jesse 8880 Mar  7 16:01 cat_test
+-rw-rw-r-- 1 jesse jesse  676 Mar  7 16:01 cat_test.c
+-rwxr-xr-x 1 root  root  9056 Mar  7 09:42 feof_ferror
+-rw-r--r-- 1 root  root  1103 Mar  7 09:42 feof_ferror.c
+
+End of the File
+jesse@ubuntu:~/Git/Linux/io_prog/L5$ cat test.txt
+total 32
+-rwxrwxrwx 1 root  root     0 Mar  7 16:03 test.txt
+-rwxrwxr-x 1 jesse jesse 8880 Mar  7 16:01 cat_test
+-rw-rw-r-- 1 jesse jesse  676 Mar  7 16:01 cat_test.c
+-rwxr-xr-x 1 root  root  9056 Mar  7 09:42 feof_ferror
+-rw-r--r-- 1 root  root  1103 Mar  7 09:42 feof_ferror.c
+```
+
+24
+全缓存函数 fread() fwrite()
+```C
+size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
+size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);
+```
+参数:
+*ptr : 读写的内容
+size: 每个单元的字节数
+nmemb: 读写单元数
+*stream: 写到哪里,从哪里读
+
+总共读写多少个字节 = size*nmemb
+返回值:实际读写的单元数
+
+切换用户名:
+切换到root用户: sudo -i
+切换到其他用户: su username
+
+25
+read write 和 getc putc 效率对比
+read write 不需要写到库缓存 用户空间所用时间短. 每次写都直接调用系统函数 而getc putc库缓存写满了才会调用系统函数. 所以read write系统空间所用时间长
+getc putc 在用户空间每次写一个字符到库缓存 所以效率比较低.
+
+总效率: fwrite/fread     >     fgets/fputs     >     read/write fgetc/fputc
+
+26
+库函数:
+静态库(.a为后缀): libxxx.a 编译时就将库编译进可执行程序中.
+优点: 程序运行环境中不需要外部的函数库 缺点: 可执行程序大
+动态库(.so为后缀): libxxx.so 在运行时将库加载到可执行程序中
+优点: 可执行程序小 缺点: 程序的运行环境中必须提供相应的库
+
+函数库目录: 主要放在 /lib 和 /usr/lib 下
+
+静态库制作:
+```Bash
+gcc -c file.c #生成目标文件
+ar -cr libfile.a file.o #静态函数库创建
+#创建命令 ar; -cr      create(或者-r replace, 覆盖)
+gcc -o object_file main.c -L. -lfile
+#-L: 函数库路径 -l: 函数库名称
+```
+
+Example:
+```Bash
+jesse@ubuntu:~/Git/Linux/io_prog/L6/static_lib$ ls
+main.c  sub.c
+jesse@ubuntu:~/Git/Linux/io_prog/L6/static_lib$ cat main.c
+#include "stdio.h"
+
+int main()
+{
+    int a = 10;
+    int b = 5;
+    int ret;
+    ret = sub(a,b);//a-b;
+    printf("ret = %d\n",ret);
+    return 1;
+
+}
+jesse@ubuntu:~/Git/Linux/io_prog/L6/static_lib$ cat sub.c
+int sub(int x, int y)
+{
+    int ret;
+    ret = x-y;
+    return ret;
+
+    //or return(x-y);
+}
+
+jesse@ubuntu:~/Git/Linux/io_prog/L6/static_lib$ gcc -c -o sub.o sub.c
+jesse@ubuntu:~/Git/Linux/io_prog/L6/static_lib$ ls
+main.c  sub.c  sub.o
+jesse@ubuntu:~/Git/Linux/io_prog/L6/static_lib$ ar -cr libsub.a sub.o
+jesse@ubuntu:~/Git/Linux/io_prog/L6/static_lib$ ls
+libsub.a  main.c  sub.c  sub.o
+jesse@ubuntu:~/Git/Linux/io_prog/L6/static_lib$ gcc -o test_lib main.c -L. -lsub
+main.c: In function ‘main’:
+main.c:8:8: warning: implicit declaration of function ‘sub’ [-Wimplicit-function-declaration]
+  ret = sub(a,b);//a-b;
+        ^
+jesse@ubuntu:~/Git/Linux/io_prog/L6/static_lib$ ls
+test  libsub.a  main.c  sub.c  sub.o
+jesse@ubuntu:~/Git/Linux/io_prog/L6/static_lib$ ./test
+ret = 5
+
+```
+
+27gcc
+
+1.预处理,生成.i的文件[预处理器cpp]
+2.将预处理后的文件转换成汇编语言,生成文件.s[编译器egcs]
+3.由汇编变为目标代码(机器代码)生成.o的文件[汇编器as]
+4.连接目标代码,生成可执行程序[链接器ld]
+
+-c
+
+只编译，不链接成为可执行文件。编译器只是由输入的 .c 等源代码文件生成 .o 为后缀的目标文件，通常用于编译不包含主程序的子程序文件。
+-o output_filename
+确定输出文件的名称为output_filename。同时这个名称不能和源文件同名。如果不给出这个选项，gcc就给出默认的可执行文件 a.out 。
+-Ldirname
+
+将dirname所指出的目录加入到程序函数库文件的目录列表中，是在链接过程中使用的参数。在默认状态下，链接程序 ld 在系统默认路径中（如 /usr/lib）寻找所需要的库文件。这个选项告诉链接程序，首先到 -L 指定的目录中去寻找，然后到系统默认路径中寻找；如果函数库存放在多个目录下，就需要依次使用这个选项，给出相应的存放目录。
+-lname
+链接时装载名为 libname.a 的函数库。该函数库位于系统默认的目录或者由 -L 选项确定的目录下。例如，-lm 表示链接名为 libm.a 的数学函数库
+
+28 动态库
+(1)生成目标文件 gcc -c file.c
+(2)gcc -shared -fpic -o libfile.so file.o
+生成动态库
+-shared: 共享库
+-fpic: 动态库和代码位置无关
+(3)gcc -o out main.c -L. -lfile 使用
+使用动态库
+-lfile 库名称
+
+生成可执行文件out后 不能立即./out运行 因为动态库函数使用时会去查找/usr/lib或/lib下的动态库 此时我们的库不在里边. 解决方法:
+1.把libfile.so移动到/usr/lib或/lib中
+2.环境变量方法: LD_LIBRARY_PATH
+```Bash
+$ export LD_LIBRARY_PATH=/home/jesse/Git/Linux/io_prog/L6/dynamic_lib #可以实现
+$ export LD_LIBRARY_PATH=/home/jesse/Git/Linux/io_prog/L6/dynamic_lib/ #不可以实现
+```
+3.修改脚本: /etc/ld.so.conf文件里加入我们生成的动态库目录 然后通过ldconfig命令 运行脚本
+
+29
+目录io:对目录的读写操作
+opendir 只能打开目录不能创建
+mkdir 创建目录
+readdir 读子目录和子文件名称 (对应文件io read函数)
+rewinddir telldir seekdir 类似于文件io的rewind(调整文件指针到开头), ftell(告知当前位置),fseek(调整到某个位置)
+closedir 关闭目录
+
+```C
+int mkdir(const char *path, mode_t mode)
+//path 为创建目录的路径
+//mode为该目录的访问权限
+//创建成功返回0 失败返回-1
+
+DIR opendir(const char *pathname)
+//参数打开目录的路径
+//成功返回值为目录流指针 失败返回NULL
+
+int closedir(DIR *stream)
+//参数为目录流指针
+//成功返回0 失败返回-1
+
+struct dirent * readdir(DIR *stream)//读目录
+//参数为目录流指针
+//成功返回struct dirent指针  出错返回NULL
+
+//struct dirent包含在头文件dirent.h中 至少包含以下两个
+struct dirent
+{
+     ino_t  d_ino;//inode号
+     char d_name[NAME_MAX+1]//文件名
+}
+
+void rewinddir(DIR *stream)//重置读取目录的位置为开头
+long telldir(DIR *stream) // 返回目录流当前位置
+void seekdir(DIR *stream, long loc)//在目录流上设置下一个readdir操作的位置
+
+```
+
+30 实例
+单机模式下的文件上传和下载
+(1)输入服务器地址
+(2)列出服务器中有哪些文件
+(3)输入从服务器下载(上传)的文件名
+(4)文件下载(上传)

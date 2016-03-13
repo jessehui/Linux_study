@@ -1,11 +1,19 @@
-#include "socket_includes.h"
+#include "stdlib.h"
 #include "stdio.h"
 #include "string.h"
 
-int main(int argc, *char argv[])
+#include "unistd.h"
+#include "fcntl.h"
+
+#include "sys/types.h"
+#include "sys/socket.h"
+#include "netinet/in.h"
+
+
+int main(int argc, char * argv[])
 {
 	int sockfd;
-	struct sockaddr servaddr;//
+	struct sockaddr_in servaddr;//
 	char buff[128] = {0};
 	int bytes;
 	
@@ -20,7 +28,7 @@ int main(int argc, *char argv[])
 
 	bzero(&servaddr, sizeof(servaddr));//wirte zero
 	servaddr.sin_family = AF_INET;//使用IPv4协议
-	servaddr.sin_ddr.s_addr = inet_addr("127.0.0.1");//指定IP地址
+	servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");//指定IP地址
 	servaddr.sin_port = htons(8888);//指定端口
 	
 	if(connect(sockfd,(struct sockaddr *)&servaddr, sizeof(servaddr)) < 0)
@@ -29,14 +37,14 @@ int main(int argc, *char argv[])
 		return -2;
 	}
 		
-	bytes = read(sockfd,buff,sizeof(buf));
+	bytes = read(sockfd,buff,sizeof(buff));
 	if(bytes < 0)
 	{
 		printf("read error\n");
 		return -3;
 	}
-	
-	printf("Time : %s",buff);
+	printf("Read Bytes:%d\n",bytes);
+	printf("Time : %s\n",buff);
 	close(sockfd);
 
 }

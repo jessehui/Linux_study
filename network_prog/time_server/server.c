@@ -1,6 +1,7 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
+#include "time.h"
 
 #include "sys/socket.h"
 #include "sys/types.h"
@@ -17,8 +18,8 @@ int main(int argc, char * argv[])
 	int sockfd, listenfd;//sockfd通信套接字， listenfd监听套接字
 	struct sockaddr_in server, client;
 	int ret_bind;
-	char buff[128] = {0};
-	int len;
+	char buff[256] = {0};
+	socklen_t len;
 	time_t timep;//#define time_t int
 	
 	listenfd = socket(AF_INET,SOCK_STREAM,0);
@@ -49,20 +50,24 @@ int main(int argc, char * argv[])
 	while(1)
 	{
 	sockfd = accept(listenfd,(struct sockaddr *)&client,&len);
+	//sockfd = accept(listenfd,(struct sockaddr *)NULL,NULL);
 	if(sockfd < 0)
 	{
 		printf("Accept Error\n");
 		return -3;
 	}
-
+	
+	//延时
+	//sleep(10);
 	//读时间
-	timep = time(NULL);
+	time(&timep);
 	
 	//sprintf(buff,"%s",ctime(&timep));
 	snprintf(buff,sizeof(buff),"%s",ctime(&timep));
 	printf("buff = %s",buff);
 	write(sockfd,buff,strlen(buff));
-	printf("Bytes Server = %d\n",sizeof(buff));	
+	printf("Bytes Server = %ld\n",sizeof(buff));
+	sleep(10);//延时	
 	close(sockfd);
 	}
 	return 0;

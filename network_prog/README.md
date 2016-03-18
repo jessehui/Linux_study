@@ -105,3 +105,60 @@ gdb ./a.out     #调用gdb
 (gdb)r          #run a.out
 (gdb)where      #定位错误位置
 ```
+
+8.
+网络字节序:
+The htons() function converts the unsigned short integer hostshort from
+       host byte order to network byte order.
+套接字地址结构:
+通用地址结构:
+```C
+struct sockaddr{
+     sa_family_t sa_family;     /* 地址族, AF_xxx */
+     char            sa_data[14];        /* 14字节的协议地址 */
+}
+```
+IPv4
+```C
+struct in_addr {
+    unsigned long s_addr;
+}
+struct in_addr {
+    unsigned long s_addr;
+}
+```
+IPv6
+```C
+struct in6_addr {
+      uint8_t s6_addr[16];    /* 128-bit IPv6 address */
+                              /* network byte ordered */
+  }
+ #define SIN6_LEN            /* required for compile-time tests */
+
+
+  struct sockaddr_in6 {
+      uint8_t             sin6_len;            /* length of this struct (28) */
+     sa_family_t            sin6_family;        /* AF_INET6 */
+     in_port_t            sin6_port;            /* transport layer port# */
+                                             /* network byte ordered */
+     uint32_t            sin6_flowinfo;        /* flow information, undefined */
+     struct in6_addr        sin6_addr;            /* IPv6 address */
+                                             /* network byte ordered */
+     uint32_t            sin6_scope_id;        /* set of interfaces for a scope */
+ }
+```
+
+绑定端口的几个函数
+```C
+    server.sin_addr.s_addr = htonl(INADDR_ANY);//绑定服务器上所有网络接口
+    //或者用inet_addr
+    //server.sin_addr.s_addr = inet_addr("192.168.1.108");//把IP地址转换为网络字节序
+    //或者用inet_aton
+    //inet_aton("192.168.1.108",&server.sin_addr.s_addr);
+    //或者用inet_pton IPv4或者IPv6都可以用
+    //inet_pton(AF_INET,"192.168.1.108",&server.sin_addr);
+```
+
+从进程到内核传递地址结构的函数:
+bind connect
+从内核传递到进程:accept

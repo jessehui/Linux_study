@@ -33,7 +33,12 @@ int main(int argc, char * argv[])
 	server.sin_family = AF_INET;//IPV4协议族
 	server.sin_port = htons(8888);//hostshort from host tyte order to network byte order
 	server.sin_addr.s_addr = htonl(INADDR_ANY);//绑定服务器上所有网络接口
-
+	//或者用inet_addr
+	//server.sin_addr.s_addr = inet_addr("192.168.1.108");//把IP地址转换为网络字节序
+	//或者用inet_aton
+	//inet_aton("192.168.1.108",&server.sin_addr.s_addr);
+	//或者用inet_pton IPv4或者IPv6都可以用
+	//inet_pton(AF_INET,"192.168.1.108",&server.sin_addr);
 	len = sizeof(struct sockaddr);	
 	//绑定套接字
 	ret_bind = bind(listenfd,(struct sockaddr *)&server,len);

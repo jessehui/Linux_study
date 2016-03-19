@@ -162,3 +162,21 @@ struct in6_addr {
 从进程到内核传递地址结构的函数:
 bind connect
 从内核传递到进程:accept
+
+9
+socket函数
+int socket(int domain,int type,int protocol)
+type
+SOCK_STREAM(字节流套接字) 对应的是TCP
+SOCK_DGRAM(数据报套接字)  对应的是UDP
+SOCK_RAW(原始套接字)
+
+connect函数
+服务器主机上 没有相应的端口与之连接(服务器进程未启动),称为硬错,收到RST,立马返回ECONNREFUSED
+
+在发送请求的时候当前IP不可达错误,协议ICMP,称为软错(software error) 通常是发送arp请求无响应
+
+listen函数 监听
+int listen(int sockfd,int backlog)
+backlog最大队列数量 已完成队列和未完成队列
+close

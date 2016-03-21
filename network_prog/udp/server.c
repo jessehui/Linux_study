@@ -38,6 +38,7 @@ int main(int argc, char *argv[])
 		return -2;
 	}
 	
+	length = sizeof(struct sockaddr_in);
 	while(1)
 	{
 	//等待接收

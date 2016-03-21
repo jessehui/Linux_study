@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 		printf("Receive Error\n");
 		return -2;
 	}	
-	
+	printf("read_buf: %s",read_buf);
 	close(sockfd);
 	return 1;
 }

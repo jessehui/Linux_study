@@ -180,3 +180,14 @@ listen函数 监听
 int listen(int sockfd,int backlog)
 backlog最大队列数量 已完成队列和未完成队列
 close
+
+10
+ssize_t recvfrom(int sockfd,//在服务器端用的哪个套接字
+
+                 void *buf,//存放在哪里
+
+                 size_t len, int flags,
+                 struct sockaddr *src_addr, socklen_t *addrlen)//从哪里接收
+
+ssize_t sendto(int sockfd, const void *buf, size_t len,int flags
+               const struct sockaddr *dest_addr,socklen_t *addrlen)

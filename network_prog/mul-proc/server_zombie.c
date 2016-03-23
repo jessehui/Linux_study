@@ -58,12 +58,12 @@ int process_data(int sockfd)
 {
 	time_t timep;
 	char buff[128] = {0};
-	char read_buf[128] = {0};
-	int size,ret_cmp;
+	char read_buf[128],s;
+	int size = 0,ret_cmp,ret_cmp2;
 	
 	while(1)
 	{	
-		memset(read_buf,0,sizeof(read_buf));//initialize
+		memset(read_buf,0,size);//initialize
 		size = recv(sockfd,read_buf,sizeof(read_buf),0);//receive from connection of client which has been built already
 		if(size < 0)
 		{
@@ -78,18 +78,29 @@ int process_data(int sockfd)
 		}
 		
 		printf("Comments of Client: %s\n",read_buf);//test
-		ret_cmp = strcmp(read_buf,"q");
+		printf("%x	%x	%x\n",read_buf[0],read_buf[1],read_buf[2]);
+		send(sockfd,read_buf,size,0);//flag是0
+		
+		s = read_buf[0];
+		ret_cmp = strcmp(s,"q");
 		printf("ret_cmp:%d\n",ret_cmp);
-		if(ret_cmp == 13)
+		if(ret_cmp == 13)//
 		{
 			printf("End\n");
 			return 1;
 		}	
-	
-		//strcpy( buff,strcat(read_buf,"_test_") );
 		
-		send(sockfd,read_buf,size,0);//flag是0
-	
+		ret_cmp2 = strcmp(read_buf,"c");
+		printf("ret_cmp2:%d\n",ret_cmp);
+		if(ret_cmp2 == -14)
+		{
+			printf("Test C\n");
+			sprintf(read_buf,"%s","Test C\n");
+			send(sockfd,read_buf,sizeof(read_buf),0);
+			return 1;
+		}
+			
+			
 	}
 	close(sockfd);
 	return 0;

@@ -9,6 +9,11 @@
 
 #include "unistd.h"
 #include "fcntl.h"
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+
 
 //最大监听队列
 #define MAX_LISTEN_QUE 5
@@ -31,7 +36,8 @@ int ipv4_tcp_sock_init(struct sockaddr_in server)
 	bzero(&server,sizeof(server));
 	server.sin_family = AF_INET;
 	server.sin_port = htons(SERV_PORT);
-	server.sin_addr.s_addr = htonl(INADDR_ANY);
+	//server.sin_addr.s_addr = htonl(INADDR_ANY);
+	server.sin_addr.s_addr = inet_addr("127.0.0.1");
 	
 	len = sizeof(struct sockaddr);
 	ret_bind = bind(sockfd,(struct sockaddr *)&server,len);
@@ -45,6 +51,45 @@ int ipv4_tcp_sock_init(struct sockaddr_in server)
 	return sockfd;
 	
 }
+
+int process_data(int sockfd)
+{
+	time_t timep;
+	char buff[128] = {0};
+	char read_buf[128] = {0};
+	int size;
+	
+	while(1)
+	{	
+		size = recv(sockfd,read_buf,sizeof(read_buf),0);//receive from connection of client which has been built already
+		if(size < 0)
+		{
+			perror("Receive failed.");
+			return -1;
+		}
+		
+		if(size == 0)
+		{
+			perror("Connection Closed.");
+			return -2;	
+		}
+		
+		printf("Comments of Client: %s\n",read_buf);//test
+		if(strcmp(read_buf,"q") == 0)
+		{
+			printf("End\n");
+			return 1;
+		}	
+	
+		strcpy( buff,strcat(read_buf,"_test_") );
+		
+		send(sockfd,buff,size,0);//flag是0
+	
+	}
+	close(sockfd);
+	return 0;
+}
+
 
 int main(int argc, char * argv[])
 {
@@ -66,19 +111,15 @@ int main(int argc, char * argv[])
 		printf("Accept Error\n");
 		return -3;
 	}
+	if( fork() == 0 )
+	{
+		close(listenfd);//关闭监听套接字
+		process_data(sockfd);//处理函数
+		exit(0);
+	}
 	
-	//延时
-	//sleep(10);
-	//读时间
-	time(&timep);
-	
-	//sprintf(buff,"%s",ctime(&timep));
-	snprintf(buff,sizeof(buff),"%s",ctime(&timep));
-	printf("buff = %s",buff);
-	write(sockfd,buff,strlen(buff));
-	printf("Bytes Server = %ld\n",sizeof(buff));
-	sleep(10);//延时	
-	close(sockfd);
+	close(sockfd);//父进程关闭已连接的套接字
+
 	}
 	return 0;
 }	

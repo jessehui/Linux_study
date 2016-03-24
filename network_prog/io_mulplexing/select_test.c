@@ -55,7 +55,7 @@ int main(int argc, char * argv[])
 	
 	while(1)
 	{
-		current_rdfs = global_rdfs;
+		current_rdfs = global_rdfs;//global_rdfs的数值由系统改变
 		if(select((maxfd+1),&current_rdfs,NULL,NULL,NULL) < 0)//永久等待
 		{
 			perror("Select Error.");

@@ -58,7 +58,8 @@ int process_data(int sockfd)
 {
 	time_t timep;
 	char buff[128] = {0};
-	char read_buf[128],s;
+	char read_buf[128];
+	char * s;
 	int size = 0,ret_cmp,ret_cmp2;
 	
 	while(1)
@@ -81,23 +82,24 @@ int process_data(int sockfd)
 		printf("%x	%x	%x\n",read_buf[0],read_buf[1],read_buf[2]);
 		send(sockfd,read_buf,size,0);//flag是0
 		
-		s = read_buf[0];
+		*s = read_buf[0];
 		ret_cmp = strcmp(s,"q");
 		printf("ret_cmp:%d\n",ret_cmp);
-		if(ret_cmp == 13)//
+		if(ret_cmp == 0)//
 		{
 			printf("End\n");
 			return 1;
 		}	
 		
-		ret_cmp2 = strcmp(read_buf,"c");
+		ret_cmp2 = strcmp(s,"c");
 		printf("ret_cmp2:%d\n",ret_cmp);
-		if(ret_cmp2 == -14)
+		if(ret_cmp2 == 0)
 		{
 			printf("Test C\n");
+			memset(read_buf,0,sizeof(read_buf));
 			sprintf(read_buf,"%s","Test C\n");
 			send(sockfd,read_buf,sizeof(read_buf),0);
-			return 1;
+			
 		}
 			
 			

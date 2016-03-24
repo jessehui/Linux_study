@@ -32,98 +32,21 @@ int ipv4_tcp_sock_init(struct sockaddr_in server)
 	
 }
 
-int process_data(int sockfd)
-{
-	time_t timep;
-	char buff[128] = {0};
-	char read_buf[128];
-	char * s;
-	int size = 0,ret_cmp,ret_cmp2;
-	
-	while(1)
-	{	
-		memset(read_buf,0,size);//initialize
-		size = recv(sockfd,read_buf,sizeof(read_buf),0);//receive from connection of client which has been built already
-		if(size < 0)
-		{
-			perror("Receive failed.");
-			return -1;
-		}
-		
-		if(size == 0)
-		{
-			perror("Connection Closed.");
-			return -2;	
-		}
-		
-		printf("Comments of Client: %s\n",read_buf);//test
-		printf("%x	%x	%x\n",read_buf[0],read_buf[1],read_buf[2]);
-		send(sockfd,read_buf,size,0);//flag是0
-		
-		*s = read_buf[0];
-		ret_cmp = strcmp(s,"q");
-		printf("ret_cmp:%d\n",ret_cmp);
-		if(ret_cmp == 0)//
-		{
-			printf("End\n");
-			return 1;
-		}	
-		
-		ret_cmp2 = strcmp(s,"c");
-		printf("ret_cmp2:%d\n",ret_cmp);
-		if(ret_cmp2 == 0)
-		{
-			printf("Test C\n");
-			memset(read_buf,0,sizeof(read_buf));
-			sprintf(read_buf,"%s","Test C\n");
-			send(sockfd,read_buf,sizeof(read_buf),0);
-			
-		}
-			
-			
-	}
-	close(sockfd);
-	return 0;
-}
 
-int process_signal(int sigo)
-{
-	switch(sigo)
-	{
-		case SIGCHLD://子进程退出时向父进程发送该信号
-		printf("Wait...\n");
-		while(waitpid(-1,NULL,WNOHANG) > 0);
-		printf("Process released.\n");
-		break;
-		
-	}
-}
-
-/*int set_signal_handler(void)
-{
-	struct sigaction act,oact;
-	act.sa_handler = (void *)process_signal;
-	sigemptyset(&act.sa_mask);
-	act.sa_flags = 0;
-	act.sa_flags |= SA_RESTART;
-	if(sigaction(SIGCHLD,&act,&oact) < 0)
-	{
-		return -1;
-	}
-	return 0;
-}*/
 
 int main(int argc, char * argv[])
 {
-	int sockfd, listenfd;//sockfd通信套接字， listenfd监听套接字
+	int sockfd, listenfd,maxfd;//sockfd通信套接字， listenfd监听套接字
 	struct sockaddr_in server, client;
-	char buff[256] = {0};
+	char read_buf[256] = {0};
 	socklen_t len;
-	time_t timep;//#define time_t int
-
-	fd_set global_rdfs,current_rdfs;
+	int i;
+	int size;
 	
-//	set_signal_handler();
+	fd_set global_rdfs,current_rdfs;//global关注的套接字集 current当前关注的套接字
+
+	len = sizeof(struct sockaddr_in);
+
 	listenfd = ipv4_tcp_sock_init(server);
 	FD_ZERO(&global_rdfs);
 	FD_SET(listenfd,&global_rdfs);	
@@ -138,28 +61,52 @@ int main(int argc, char * argv[])
 			perror("Select Error.");
 			return RT_ERR;
 		}
+		
+		for(i = 0;i <= maxfd;i++)//i是等待的某个套接字的文件描述符
+		{
+			if(FD_ISSET(i,&current_rdfs))
+			{
+				if(i == listenfd)
+				{
+					sockfd = accept(listenfd,(struct sockaddr *)&client,&len); 
+					if(sockfd < 0)
+					{
+						perror("Accept error");
+						return RT_ERR;
+					}
+					//accept接收到套接字之后
+					printf("sockfd:%d\n",sockfd);
+					FD_CLR(i,&current_rdfs);//清零
+					maxfd = maxfd > sockfd ? maxfd: sockfd;//最大的套接字变成通信套接字
+					FD_SET(sockfd,&global_rdfs);//把通信套接字加入观察的file set集里
+					
+				}
+				//不是监听套接字 直接recv读
+				else
+				{
+					size = recv(i,read_buf,sizeof(read_buf),0);
+					if(size < 0)
+					{
+						perror("receive error.");
+						return RT_ERR;//退出整个循环 
+					}
+					if(size == 0)
+					{
+						printf("Receive finish");
+						FD_CLR(i,&global_rdfs);//从套接字集里去除
+						close(i);//关闭
+						continue;//退出本次循环 继续下一次循环
+					}
+					printf("read_buf:%s",read_buf);
+					send(i,read_buf,size,0);
+					
+				}
+			}
+		}
 
-
-
-
-
-	sockfd = accept(listenfd,(struct sockaddr *)&client,&len);
-	//sockfd = accept(listenfd,(struct sockaddr *)NULL,NULL);
-	if(sockfd < 0)
-	{
-		printf("Accept Error\n");
-		return -3;
 	}
-	if( fork() == 0 )
-	{
-		close(listenfd);//关闭监听套接字
-		process_data(sockfd);//处理函数
-		exit(0);
-	}
-	
-	close(sockfd);//父进程关闭已连接的套接字
 
-	}
-	return 0;
+
+
 }	
 

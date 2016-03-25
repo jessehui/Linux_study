@@ -93,9 +93,9 @@ int main(int argc, char * argv[])
 			if(client_fd[i] == -1)
 			continue;//套接字不存在直接检测下一个
 
-			if(FD_ISSET(i,&current_rdfs))
+			if(FD_ISSET(client_fd[i],&current_rdfs))
 		{
-				size = recv(i,read_buf,sizeof(read_buf),0);
+				size = recv(client_fd[i],read_buf,sizeof(read_buf),0);
 				if(size < 0)
 				{
 					perror("receive error.");
@@ -103,14 +103,14 @@ int main(int argc, char * argv[])
 				}
 				if(size == 0)
 				{
-					printf("Receive finish");
-					FD_CLR(i,&global_rdfs);//从套接字集里去除
-					close(i);//关闭
+					printf("Receive finish\n");
+					FD_CLR(client_fd[i],&global_rdfs);//从套接字集里去除
+					close(client_fd[i]);//关闭
 					client_fd[i] = -1;
 					continue;//退出本次循环 继续下一次循环
 				}
 				printf("read_buf:%s",read_buf);
-				send(i,read_buf,size,0);
+				send(client_fd[i],read_buf,size,0);
 					
 				}
 			}

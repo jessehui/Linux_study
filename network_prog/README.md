@@ -184,7 +184,7 @@ backlog最大队列数量 已完成队列和未完成队列
 close
 
 10
-
+```C
 ssize_t recvfrom(int sockfd,//在服务器端用的哪个套接字
 
                  void *buf,//存放在哪里
@@ -194,7 +194,7 @@ ssize_t recvfrom(int sockfd,//在服务器端用的哪个套接字
 
 ssize_t sendto(int sockfd, const void *buf, size_t len,int flags
                const struct sockaddr *dest_addr,socklen_t *addrlen)
-               
+```               
 
 11
 
@@ -215,7 +215,7 @@ On success, the PID of the child process is returned in the parent, and
 
 
 exit - cause normal process termination
-     ```C
+```C
       #include <stdlib.h>
 
        void exit(int status);
@@ -238,12 +238,12 @@ recv,recvfrom,recvmsg返回值:
 任何一个子进程(init除外)在exit后并非马上就消失，而是留下一个称外僵尸进程的数据结构，等待父进程处理。这是每个子进程都必需经历的阶段。另外子进程退出的时候会向其父进程发送一个SIGCHLD信号。
 
 The  wait() system call suspends execution of the calling process until
-       one of its children terminates.  The call wait(&status)  is  equivalent
-       to:
-
-           waitpid(-1, &status, 0);
-
+one of its children terminates.  The call wait(&status)  is  equivalent
+to:
 ```C
+          waitpid(-1, &status, 0);
+
+
        #include <sys/types.h>
        #include <sys/wait.h>
 

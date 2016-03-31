@@ -33,23 +33,101 @@ int ipv4_tcp_sock_init(struct sockaddr_in server)
 	
 }
 
+int cus_process_data(int socketfd)//process data function
+{
+	int bytes;//size of data received
+	char read_buf[128];
+	bytes = recv(socketfd,read_buf,sizeof(read_buf),0);//receive data
+	if(bytes < 0)
+	{
+		perror("receive error");
+		return -1;
+	}
+	if(bytes == 0)
+	{
+		printf("receive finish\n");
+		return -2;
+	}
 
+	//after read
+	printf("read_buf:%s\n",read_buf);
+	send(socketfd,read_buf,bytes,0);
+	return 0;
+}
 
 int main(int argc, char * argv[])
 {
-	int epollfd, listenfd;
+	int epollfd,listenfd,fd_active;
+	int socketfd;//communication socket
+	int ret_epol_ctl;//return value of epoll_ctl
+	int ret_pro_data;//return value of process data function
 	struct epoll_event ev;	
+	struct epoll_event events[MAX_EVENTS];//can store all events that epoll wait for
+	int i;
+	struct sockaddr_in client,server;
+	int len = sizeof(struct sockaddr_in);
 	
-	listenfd = ipv4_tcp_sock_init();
-	epollfd = epoll_create();//使用的是非阻塞式套接字
+	listenfd = ipv4_tcp_sock_init(server);
+	epollfd = epoll_create(MAX_EVENTS);//使用的是非阻塞式套接字
+	if(epollfd < 0)
+		{
+			perror("epoll create failed");
+			return -1;
+		}
+
 	fcntl(listenfd, F_SETFL,O_NONBLOCK);//设置监听套接字为非阻塞状态
 	
 	ev.data.fd = listenfd;
 	ev.events = EPOLLIN;//关注数据可读的状态（IN 输入）
-	epoll_ctl(epollfd,EPOLL_CTL_ADD,listenfd,&ev);//把listenfd加入关注的事件
+	ret_epol_ctl = epoll_ctl(epollfd,EPOLL_CTL_ADD,listenfd,&ev);//把listenfd加入关注的事件
+	if(ret_epol_ctl < 0)
+	{
+		perror("epoll control error");
+		return -1;
+	}
+
 	while(1)
 	{
+		fd_active = epoll_wait(epollfd,events,MAX_EVENTS,-1);//等待关注事件的套接字集
+		//-1 means wait forever
+		if(fd_active < 0)
+		{
+			perror("epoll wait error");
+			return -1;
+		}
 		
+		for(i = 0;i<=fd_active;i++)
+		{
+			if(events[i].data.fd == listenfd)//if true, means new client is comming
+			{
+				socketfd = accept(listenfd,(struct sockaddr *)&client, &len);
+				if(socketfd < 0)
+					{
+						perror("accept error");
+						continue;//one error don't affect others
+					}
+				
+				ev.data.fd = socketfd;
+				ev.events = EPOLLIN | EPOLLET;//EPOLLET means to set the 
+				//edge triggered behavior for the file descriptor.
+
+				//add new communication socket to the watching list	
+				epoll_ctl(epollfd,EPOLL_CTL_ADD,socketfd,&ev);
+				continue;
+			}
+			else//if not the new client, but the data come in
+			{
+				//custome-defined data process function
+				ret_pro_data = cus_process_data(events[i].data.fd);
+				if(ret_pro_data == -2)//receive finish, client end connection by its own
+				{
+					//clean the socket that I was watching 
+					epoll_ctl(epollfd,EPOLL_CTL_DEL,events[i].data.fd,&ev);
+					close(events[i].data.fd);
+					continue;
+				}
+			}
+		}
 	}
 	
 }
@@ -65,91 +143,4 @@ int main(int argc, char * argv[])
 
 
 
-//********************************************
-
-	int sockfd, listenfd,maxfd;//sockfd通信套接字， listenfd监听套接字
-	struct sockaddr_in server, client;
-	char read_buf[256] = {0};
-	socklen_t len;
-	int i;
-	int size;
-	int client_fd[FD_SETSIZE];//监听的套接字形成的数组 一般最大有1024个
-	
-	for(i = 0;i < FD_SETSIZE;i++)
-		client_fd[i] = -1;//client_fd数组初始化
-
-	fd_set global_rdfs,current_rdfs;//global关注的套接字集 current当前关注的套接字
-
-	len = sizeof(struct sockaddr_in);
-
-	listenfd = ipv4_tcp_sock_init(server);
-	FD_ZERO(&global_rdfs);
-	FD_SET(listenfd,&global_rdfs);	
-	maxfd = listenfd;
-
-	
-	while(1)
-	{
-		current_rdfs = global_rdfs;//global_rdfs的数值由系统改变
-		if(select((maxfd+1),&current_rdfs,NULL,NULL,NULL) < 0)//永久等待
-		{
-			perror("Select Error.");
-			return RT_ERR;
-		}
-		if(FD_ISSET(listenfd,&current_rdfs))
-		{
-		sockfd = accept(listenfd,(struct sockaddr *)&client,&len); 		    if(sockfd < 0)
-		{
-			perror("Accept error");
-			return RT_ERR;
-		}
-		//accept接收到套接字之后
-		printf("sockfd:%d\n",sockfd);
-		FD_CLR(i,&current_rdfs);//清零
-		maxfd = maxfd > sockfd ? maxfd: sockfd;//最大的套接字变成通信套接字
-		FD_SET(sockfd,&global_rdfs);//把通信套接字加入观察的file set集里
-		for(i = 0;i < maxfd;i++)
-		{
-			if(-1 == client_fd[i])//套接字不存在 可以存放新的套接字即sockfd
-			{
-				client_fd[i] = sockfd;
-				break;
-			}
-		}
-		}
-
-		
-		for(i = 0;i <= maxfd;i++)//i是等待的某个套接字的文件描述符
-		{
-			if(client_fd[i] == -1)
-			continue;//套接字不存在直接检测下一个
-
-			if(FD_ISSET(client_fd[i],&current_rdfs))
-		{
-				size = recv(client_fd[i],read_buf,sizeof(read_buf),0);
-				if(size < 0)
-				{
-					perror("receive error.");
-					return RT_ERR;//退出整个循环 
-				}
-				if(size == 0)
-				{
-					printf("Receive finish\n");
-					FD_CLR(client_fd[i],&global_rdfs);//从套接字集里去除
-					close(client_fd[i]);//关闭
-					client_fd[i] = -1;
-					continue;//退出本次循环 继续下一次循环
-				}
-				printf("read_buf:%s",read_buf);
-				send(client_fd[i],read_buf,size,0);
-					
-				}
-			}
-		}
-
-	}
-
-
-
-	
 

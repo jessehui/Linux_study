@@ -216,7 +216,7 @@ On success, the PID of the child process is returned in the parent, and
 
 exit - cause normal process termination
 ```C
-      #include <stdlib.h>
+      #include 'stdlib.h'
 
        void exit(int status);
 ```
@@ -252,23 +252,27 @@ to:
        pid_t waitpid(pid_t pid, int *status, int options);
 
 ```
+
  The value of pid can be:
 
-       < -1   meaning wait for any child process whose  process  group  ID  is
-              equal to the absolute value of pid.
+ < -1   meaning wait for any child process whose  process  group  ID  is
+        equal to the absolute value of pid.
 
-       -1     meaning wait for any child process.
+ -1     meaning wait for any child process.
 
-       0      meaning  wait  for  any  child process whose process group ID is
-              equal to that of the calling process.
+ 0      meaning  wait  for  any  child process whose process group ID is
+        equal to that of the calling process.
 
-       > 0    meaning wait for the child whose process  ID  is  equal  to  the
-              value of pid.
+ > 0    meaning wait for the child whose process  ID  is  equal  to  the
+        value of pid.
 
 option value:
 WNOHANG     return immediately if no child has exited.
 
+</br>
+
 14 IO
+
 阻塞式IO: 例如recv 数据未准备好就等待 直到数据准备好 然后从内核空间复制到进程空间 耗费时间
 非阻塞式IO: 调用一次就返回一次 可能有数据 也有可能没数据 比较耗资源
 信号驱动IO: 注册SIGIO函数 系统调用 数据未准备好 不阻塞 返回. 直到数据准备好 进程捕获SIGIO. 系统再次调用 然后从内核空间复制到进程空间
@@ -277,20 +281,21 @@ IO复用: 调用select函数, 等待(可以等待多个套接字), 数据准备�
 
 IO复用示意图
 
-1、栈区（stack）— 由编译器自动分配释放 ，存放函数的参数值，局部变量的值等。其操作方式类似于数据结构中的栈
+(1)栈区（stack）— 由编译器自动分配释放 ，存放函数的参数值，局部变量的值等。其操作方式类似于数据结构中的栈
 
-2、堆区（heap） — 一般由程序员分配释放，若程序员不释放，程序结束时可能由OS回收。注意它与数据结构中的堆是两回事，分配方式倒是类似于链表，呵呵。
-3、全局区（静态区）（static）—，全局变量和静态变量的存储是放在一块的，初始化的全局变量和静态变量在一块区域， 未初始化的全局变量和未初始化的静态变量在相邻的另一块区域。 - 程序结束后有系统释放
-4、文字常量区 —常量字符串就是放在这里的。 程序结束后由系统释放
+(2)堆区（heap） — 一般由程序员分配释放，若程序员不释放，程序结束时可能由OS回收。注意它与数据结构中的堆是两回事，分配方式倒是类似于链表，呵呵。
+(3)全局区（静态区）（static）—，全局变量和静态变量的存储是放在一块的，初始化的全局变量和静态变量在一块区域， 未初始化的全局变量和未初始化的静态变量在相邻的另一块区域。 - 程序结束后有系统释放
+(4)文字常量区 —常量字符串就是放在这里的。 程序结束后由系统释放
+
 
 ```C
 /* According to POSIX.1-2001 */
-       #include <sys/select.h>
+       #include 'sys/select.h'
 
 /* According to earlier standards */
-       #include <sys/time.h>
+       #include 'sys/time.h'
        #include <sys/types.h>
-       #include <unistd.h>
+       #include 'unistd.h'
 
        int select(int nfds, //等待的最大套接字的文件描述符+1
                       fd_set *readfds,//要读数据的套接字是哪些
@@ -347,3 +352,13 @@ int epoll_ctl(int epfd, int op,//op参数:EPOLL_CTL_ADD,EPOLL_CTL_MOD,EPOLL_CTL_
 int epoll_wait(int epfd, struct epoll_event *events,int maxevents,int timeout)
 
 ```
+
+16
+
+accept函数是从等待接续的request中取出一个，并确立连接的函数。
+
+一旦确立连接，新的Socket就被做成。和客户端的通信就是用那个新的Socket。
+
+accept函数的定义
+SOCKET t=accept(SOCKET s,struct sockaddr FAR* addr,int FAR* addrlen);
+等待接续的队列中没有request时、一实行accept函数，程序就停在这里、然后一旦有接续要求，就再从这里开始运行

@@ -362,3 +362,13 @@ accept函数是从等待接续的request中取出一个，并确立连接的函�
 accept函数的定义
 SOCKET t=accept(SOCKET s,struct sockaddr FAR* addr,int FAR* addrlen);
 等待接续的队列中没有request时、一实行accept函数，程序就停在这里、然后一旦有接续要求，就再从这里开始运行
+
+17
+
+并发编程方法的比较
+(1) ache模型(process per connection,简称ppc). tpc模型(thread per connection)
+    各做各的事情
+(2) select模型和poll模型
+    效率低
+(3) epoll模型
+    只关注活跃的连接 效率高

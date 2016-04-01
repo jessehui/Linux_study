@@ -9,6 +9,8 @@
 #include "sys/socket.h"
 #include "sys/types.h"
 #include "netinet/in.h"
+#include <arpa/inet.h>
+
 
 int main(int argc, char *argv[])
 {
@@ -26,10 +28,11 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
+	//configurate the server IP address and port
 	bzero(&server,sizeof(server));
 	server.sin_family = AF_INET;
 	server.sin_port = htons(8888);
-	server.sin_addr.s_addr = htonl(INADDR_ANY);
+	server.sin_addr.s_addr = inet_addr("172.16.128.147");
 
 	len = sizeof(struct sockaddr);
 	if( bind(sockfd,(struct sockaddr *)&server,len) < 0 )

@@ -37,9 +37,15 @@ int cus_process_data(int socketfd)//process data function
 {
 	int bytes;//size of data received
 	char read_buf[128];
+	if(socketfd <= 0)//null socket
+	{
+		printf("Null Socket.\n");
+		return -1;
+	}
 	bytes = recv(socketfd,read_buf,sizeof(read_buf),0);//receive data
 	if(bytes < 0)
-	{
+	{	
+		printf("bytes = %d\n",bytes);
 		perror("receive error");
 		return -1;
 	}
@@ -118,6 +124,7 @@ int main(int argc, char * argv[])
 			else//if not the new client, but the data come in
 			{
 				//custome-defined data process function
+				printf("events[%d].data.fd = %d\n",i,events[i].data.fd);
 				ret_pro_data = cus_process_data(events[i].data.fd);
 				if(ret_pro_data == -2)//receive finish, client end connection by its own
 				{

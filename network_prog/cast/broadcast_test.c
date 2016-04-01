@@ -1,4 +1,6 @@
 #include "../socket_includes.h"
+#include <sys/types.h>          /* See NOTES */
+#include <sys/socket.h>
 
 
 int main(int argc, char *argv[])
@@ -12,11 +14,21 @@ int main(int argc, char *argv[])
  	int len,length;
 	time_t timep;
 	int ret_sdt;//return value of sendto 
+	int ret_setsockopt;
+	int on = 1;
 	
 	sockfd = socket(AF_INET,SOCK_DGRAM,0);//udp用SOCK_DGRAM 参数
 	if(sockfd < 0)
 	{
-		printf("Creating Socket Error\n");
+		perror("Creating Socket Error");
+		return -1;
+	}
+
+	//set socket to be broadcast socket
+	ret_setsockopt = setsockopt(sockfd,SOL_SOCKET,SO_BROADCAST,&on,sizeof(on));
+	if(ret_setsockopt < 0)
+	{
+		perror("set socket error");
 		return -1;
 	}
 
@@ -55,8 +67,10 @@ int main(int argc, char *argv[])
 	printf("length = %d\n",recv_ret);
 	printf("ip:0x%x port: %d\n",ntohl(broadcast.sin_addr.s_addr),ntohs(broadcast.sin_port));
 	printf("read_buf: %s\n",read_buf);
+	printf("Test End.\n");
+	sleep(3);
 
-/*	while(1)
+	while(1)
 	{
 	//等待接收
 	recv_ret = recvfrom(sockfd, read_buf, sizeof(read_buf),0,
@@ -67,7 +81,7 @@ int main(int argc, char *argv[])
 	 	return -3;
 	}
 	printf("length = %d\n",recv_ret);
-	printf("ip:0x%x port: %d\n",ntohl(client.sin_addr.s_addr),ntohs(client.sin_port));
+	printf("ip:%d 	 port: %d\n",ntohl(client.sin_addr.s_addr),ntohs(client.sin_port));
 	printf("read_buf: %s\n",read_buf);
 	
 	
@@ -81,7 +95,7 @@ int main(int argc, char *argv[])
 	bzero(read_buf,128);
 
 	}
-*/	
+	
 	close(sockfd);
 	return 1;
 

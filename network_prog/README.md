@@ -372,3 +372,12 @@ SOCKET t=accept(SOCKET s,struct sockaddr FAR* addr,int FAR* addrlen);
     效率低
 (3) epoll模型
     只关注活跃的连接 效率高
+
+
+18
+
+组播(多播) multicast
+
+
+
+

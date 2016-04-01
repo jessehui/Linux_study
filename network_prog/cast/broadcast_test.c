@@ -8,8 +8,10 @@ int main(int argc, char *argv[])
 	struct sockaddr_in broadcast;//port that is used to send udp message
 	char buff[128] = {0};
 	char read_buf[128] = {0};
-	int len,length;
+	char brd_cst_buf[] = "BROADCAST TEST SUCCESS.\n";
+ 	int len,length;
 	time_t timep;
+	int ret_sdt;//return value of sendto 
 	
 	sockfd = socket(AF_INET,SOCK_DGRAM,0);//udp用SOCK_DGRAM 参数
 	if(sockfd < 0)
@@ -26,7 +28,7 @@ int main(int argc, char *argv[])
 	bzero(&broadcast,sizeof(broadcast));
 	broadcast.sin_family = AF_INET;
 	broadcast.sin_port = htons(8888);
-	broadcast.sin_addr.s_addr = htonl(INADDR_ANY);//use this address to send out message
+	broadcast.sin_addr.s_addr = inet_addr("172.16.128.147");//use this address to send out message
 
 
 	len = sizeof(struct sockaddr);
@@ -35,9 +37,26 @@ int main(int argc, char *argv[])
 		printf("Bind Error\n");
 		return -2;
 	}
+
 	
 	length = sizeof(struct sockaddr_in);
-	while(1)
+	//send the message
+	ret_sdt = sendto(sockfd,brd_cst_buf,sizeof(brd_cst_buf),0,(struct sockaddr *)&broadcast,length);
+	printf("ret_sendto = %d\n",ret_sdt);
+
+	//receive from its own broadcast message
+	recv_ret = recvfrom(sockfd, read_buf, sizeof(read_buf),0,
+			    (struct sockaddr *)&broadcast,&length);
+	if(recv_ret < 0)
+	{
+		printf("Receive Error\n");
+	 	return -3;
+	}
+	printf("length = %d\n",recv_ret);
+	printf("ip:0x%x port: %d\n",ntohl(broadcast.sin_addr.s_addr),ntohs(broadcast.sin_port));
+	printf("read_buf: %s\n",read_buf);
+
+/*	while(1)
 	{
 	//等待接收
 	recv_ret = recvfrom(sockfd, read_buf, sizeof(read_buf),0,
@@ -62,6 +81,8 @@ int main(int argc, char *argv[])
 	bzero(read_buf,128);
 
 	}
+*/	
 	close(sockfd);
 	return 1;
+
 }

@@ -26,6 +26,7 @@ int main(int argc, char * argv[])
 		return -1;
 	}
 
+	//get message from the host and the port which are defined here
 	bzero(&servaddr, sizeof(servaddr));//wirte zero
 	servaddr.sin_family = AF_INET;//使用IPv4协议
 	servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");//指定IP地址

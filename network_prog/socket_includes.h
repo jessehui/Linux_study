@@ -22,3 +22,5 @@
 #define SERV_PORT 8888
 //return value if error occcurs
 #define RT_ERR (-1)
+
+#define MAX_EVENTS 500

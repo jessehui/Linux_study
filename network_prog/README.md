@@ -192,9 +192,11 @@ ssize_t recvfrom(int sockfd,//在服务器端用的哪个套接字
                  size_t len, int flags,
                  struct sockaddr *src_addr, socklen_t *addrlen)//从哪里接收
 
-ssize_t sendto(int sockfd, const void *buf, size_t len,int flags
+ssize_t sendto(int sockfd, const void *buf, size_t len,int flags,
                const struct sockaddr *dest_addr,socklen_t *addrlen)
-```               
+               //用某个套接字 发送某个buf中的数据 发送给某个地址的端口
+```
+
 
 11
 
@@ -374,10 +376,122 @@ SOCKET t=accept(SOCKET s,struct sockaddr FAR* addr,int FAR* addrlen);
     只关注活跃的连接 效率高
 
 
-18
+####18
 
-组播(多播) multicast
+* 单播 unicast
+* 任播 anycast    IPV6中提出
+* 广播 broadcast 
+* 组播(多播) multicast
+
+广播组播都需要使用UDP 不能使用TCP
+
+IPv4 地址的表示 {子网ID,主机ID} 例如192.168.1.104: 104表示主机地址
+
+套接字选项
+```C
+int setsockopt(
+SOCKET s,
+int level,
+int optname,
+const char* optval,
+int optlen
+);
+```
+* level:(级别)： 指定选项代码的类型。
+  - SOL_SOCKET: 基本套接口
+  - IPPROTO_IP: IPv4套接口
+  - IPPROTO_IPV6: IPv6套接口
+  - IPPROTO_TCP: TCP套接口
+
+* optname(选项名)： 选项名称
+   SO_DEBUG 打开或关闭排错模式
+   SO_REUSEADDR 允许在bind ()过程中本地地址可重复使用
+   SO_TYPE 返回socket 形态.
+   SO_ERROR 返回socket 已发生的错误原因
+   SO_DONTROUTE 送出的数据包不要利用路由设备来传输.
+   SO_BROADCAST 使用广播方式传送
+   SO_SNDBUF 设置送出的暂存区大小
+   SO_RCVBUF 设置接收的暂存区大小
+   SO_KEEPALIVE 定期确定连线是否已终止.
+   SO_OOBINLINE 当接收到OOB 数据时会马上送至标准输入设备
+   SO_LINGER 确保数据安全且可靠的传送出去
+
+* optval 代表欲设置的值, 参数optlen 则为optval 的长度. true or false, 1或0
 
 
+###19 组播
+组播IP地址:224.0.0.0 - 239.255.255.255(D类)
+组播以太网地址(mac地址)开头高三个字节总是 01:00:5e
+MAC地址有单播、组播、广播之分。
+单播地址(unicast address)表示单一设备、节点，多播地址或者组播地址(multicast address、group address)表示一组设备、节点，广播地址(broadcast address)是组播的特例，表示所有地址，用全F表示：FF-FF-FF-FF-FF-FF。当然，三层的IP地址也有单播、组播、广播之分。
+组播分为两个部分:
+向下的组播数据流
+组播控制流(IGMP协议v1,v2,v3):分三种报文 report(join),leave, query.
+
+client:
+IP_MULTICAST_LOOP
+IP_ADD_MEMBERSHIP
+IP_DROP_MEMBERSHIP
 
 
+###20 原始套接字
+
+创建:
+socket函数
+int socket(int domain,int type,int protocol)
+type
+SOCK_STREAM(字节流套接字) 对应的是TCP
+SOCK_DGRAM(数据报套接字)  对应的是UDP
+SOCK_RAW(原始套接字)
+```C
+int socket(AF_INET,SOCK_RAW,protocol)//原始套接字创建
+```
+
+输出:
+```c
+ssize sendto(int sockfd, const void *buf, size_t len, int flags, 
+const struct sockaddr *dest_addr, socklen_t addrlen) 
+```
+
+输入:
+```c
+ssize recvfrom(int sockfd, const void *buf, size_t len, int flags,
+const struct sockaddr *src_addr, socklen_t addrlen)
+```
+
+哪些情况内核会将接收到的IP数据报传递给原始套接字(原始套接字只处理到IP层)
+* 接收到的TCP, UDP不会, 这两者是传输层
+* ICMP分组会在内核处理完其中的ICMP消息之后传递原始套接字
+* IGMP同上
+* 内核不认识其协议字段的IP数据报
+
+
+###21 ICMP,IGMP
+
+(1) 
+ICMP（Internet 控制消息协议，Internet Control Message Protocol）协议用来给IP协议提供控制服务，允许路由器或目标主机给数据的发送方提供反馈信息。需要发送反馈信息的情况包括：数据包不能被发送到 目标主机，路由器缓冲区溢出导致数据包被删除，路由器想要把流量重定向到另外一个更短的路由上等。ICMP协议是IP协议的一部分，任何实现了IP协议的 设备同时也被要求实现ICMP协议。 
+(2)
+IGMP（互联网组管理协议）是一种互联网协议，提供这样一种方法,使得互联网上的主机向临近路由器报告它的广播组成员。 广播使得互联网上的一个主机向网上确认对于源主机发送内容感兴趣的计算机发送信息。
+
+IP 不能提供差错控制和辅助机制（如：主机的管理和查询）！
+为此，ICMP很好的承担了这个任务！
+ICMP是网际控制包协议，它的功能是：差错报告和查询
+ICMP发送的ICMP包并不能直接交到下1层，必须在加IP的包头！
+ICMP的包分两类：1是差错报告包2是查询包
+
+
+###22 ARP, RARP
+* 在以太网（ARP协议只适用于局域网）中，如果本地主机想要向某一个IP地址的主机（路由表中的下一跳路由器或者直连的主机，注意此处IP地址不一定是IP数据报中的目的IP）发包，但是并不知道其硬件地址，此时利用ARP协议提供的机制来获取硬件地址，具体过程如下：
+
+1) 本地主机在局域网中广播ARP请求，ARP请求数据帧中包含目的主机的IP地址。意思是“如果你是这个IP地址的拥有者，请回答你的硬件地址”。
+
+2) 目的主机的ARP层解析这份广播报文，识别出是询问其硬件地址。于是发送ARP应答包，里面包含IP地址及其对应的硬件地址。
+
+3) 本地主机收到ARP应答后，知道了目的地址的硬件地址，之后的数据报就可以传送了。
+
+点对点链路不使用ARP协议。
+
+* RARP：逆地址解析协议
+将局域网中某个主机的物理地址转换为IP地址，比如局域网中有一台主机只知道物理地址而不知道IP地址，那么可以通过RARP协议发出征求自身IP地址的广播请求，然后由RARP服务器负责回答。RARP协议广泛应用于无盘工作站引导时获取IP地址。
+
+RARP允许局域网的物理机器从网管服务器ARP表或者缓存上请求其IP地址。

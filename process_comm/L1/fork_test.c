@@ -12,7 +12,7 @@ int main()
 	if(pid == 0)
 	{
 		int i = 0;
-		while(process_inter == 0);	//wait
+	//	while(process_inter == 0);	//wait
 		for(int i = 0; i < 5; i++)
 		{
 			printf("this is child process i = %d\n", i);

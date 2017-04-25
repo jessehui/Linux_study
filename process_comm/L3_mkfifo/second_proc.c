@@ -27,7 +27,7 @@ int main()
 	else
 		printf("receive failure\n");
 
-	int i;
+	int i;	
 	for(i=0; i<5; i++)
 	{
 		printf("This is second process i = %d\n", i);

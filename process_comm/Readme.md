@@ -117,6 +117,16 @@ WNOHANG：如果没有任何已经结束的子进程则马上返回, 不予以�
 
 返回值：如果执行成功则返回子进程识别码(PID), 如果有错误发生则返回-1. 
 
+11. alarm函数
+闹钟函数, 只会发一种信号. 即`SIGALRM`. 该信号当一个定时器到时的时候发出. 默认操作是终止进程.  
+alarm和raise和kill的区别是调用成功后会延迟一段时间. 
+```c
+unsigned int alarm(unsigned int seconds);
+//seconds: 指定的延迟时间.
+
+```
+
+
 
 
 
